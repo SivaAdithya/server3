@@ -4,13 +4,17 @@ const multer = require('multer');
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const route = require("./controller/route");
+//import * as dotenv from 'dotenv';
 const path = require('path')
-
+const PORT = 4500;
+//dotenv.config();
 mongoose.set('strictQuery', true);
-mongoose.connect('mongodb+srv://pranaav6703:sunny1234@cluster0.akzd3ue.mongodb.net/mydatabase?retryWrites=true&w=majority', {
-  useNewUrlParser: true,
+ mongoose.connect("mongodb+srv://pranaav6703:sunny1234@cluster0.akzd3ue.mongodb.net/mydatabase?retryWrites=true&w=majority", {
+   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
+ });
+
+
 
 var db = mongoose.connection;
 db.on('error',()=>{console.log("Error occured")});
@@ -18,6 +22,7 @@ db.once('open',()=>console.log("Connected to database"));
 
 const app = express();
 app.use(cors());
+app.options("*", cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use('/backend',route);
@@ -90,4 +95,8 @@ app.post('/addproduct', logFileUploadStart, upload.array('images'), (req, res) =
     res.sendFile(path.join(__dirname, 'index.html'))
 });
 
-app.listen(4500,()=>console.log("Server started at 4500"))
+app.listen(process.env.PORT || 4500, () => {
+  console.log(`API listening on PORT ${PORT} `)
+})
+
+module.exports = app;

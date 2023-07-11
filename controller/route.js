@@ -210,8 +210,9 @@ router.get('/get_det/:id', getCardDet);
 router.get('/get_amt/:id', get_price);
 router.put('/upd-amt/:id', upd_amt);
 router.post('/create-cart', crt_det);
-
+router.use(cors({
+    origin: ["*"] // List of allowed origins
+  }));
 
 module.exports = router;
 
-console
