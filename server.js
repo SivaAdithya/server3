@@ -5,7 +5,8 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const route = require("./controller/route");
 //import * as dotenv from 'dotenv';
-const path = require('path')
+const cloudinary = require('cloudinary').v2;
+const path = require('path');
 const PORT = 4500;
 //dotenv.config();
 mongoose.set('strictQuery', true);
@@ -28,6 +29,12 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use('/backend',route);
 ///////////////////////////
 
+cloudinary.config({
+  cloud_name: 'duxmcvo7j',
+  api_key: '147614282417372',
+  api_secret: 'KeB1q8O82JeWihiUdvJz-WVEwQs'
+});
+
 const productSchema = new mongoose.Schema({
   name: String,
   price: Number,
@@ -38,37 +45,26 @@ const productSchema = new mongoose.Schema({
   time: String,
   status: String,
   buyer: String,
-  images: [String],
+  imageUrl: String
 });
 
 //////////////
 const Product = mongoose.model('Product', productSchema);
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, __dirname+'/uploads');
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  },
-});
-const upload = multer({ storage: storage});
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-    const logFileUploadStart = (req, res, next) => {
-      console.log('File upload starting');
-      next();
-    };
-    
 // Route to handle form submission and save the data to MongoDB
-app.post('/addproduct', logFileUploadStart, upload.array('images'), (req, res) => {
-    const { name, price, email, condition, category, description, time, status, buyer } = req.body;
-    let images = [];
-    
-    if (req.files) {
-      images = req.files.map((file) => file.path);
-    }
-  
+app.post('/addproduct', upload.single('images'), async (req, res) => {
+  try {
+    // Convert the image buffer to a string
+    const imageBuffer = req.file.buffer.toString('base64');
+
+    // Upload the image to Cloudinary
+    const result = await cloudinary.uploader.upload(`data:image/jpeg;base64,${imageBuffer}`, { folder: 'product-images' });
+
+    // Save the image URL and other form data to MongoDB
+    const { name, price, email, condition, category, description, time, status , buyer } = req.body;
     const newProduct = new Product({
       name,
       price,
@@ -79,20 +75,26 @@ app.post('/addproduct', logFileUploadStart, upload.array('images'), (req, res) =
       time,
       status,
       buyer,
-      images,
+      imageUrl: result.secure_url
     });
-    console.log(newProduct)
-    try {
-       newProduct.save();
-      res.status(200).json({ message: 'Product saved successfully' });
-    } catch (error) {
-      console.error('Failed to save product:', error.mess);
-      res.status(500).json({ error: 'Failed to save product' });
-    }
-  });
+    await newProduct.save();
 
-  app.get('/get-image', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'))
+    res.status(200).json({ message: 'Product saved successfully' });
+  } catch (error) {
+    console.error('Failed to save product:', error);
+    res.status(500).json({ error: 'Failed to save product' });
+  }
+});
+
+
+app.get('/products', async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    console.error('Failed to retrieve products', error);
+    res.status(500).json({ error: 'Failed to retrieve products' });
+  }
 });
 
 app.listen(process.env.PORT || 4500, () => {

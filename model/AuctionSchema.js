@@ -11,7 +11,7 @@ const ItemSchema = new Schema({
   condition: String,
   category: String,
   description: String,
-  images: [String],
+  images: String,
   time:{type: String},
 status:{type: String},
 buyer:String
@@ -20,7 +20,7 @@ buyer:String
     /*
     img:{type: String},
     title:{type: String},
-    price:{type: Number},
+    price:{type: Number},s
     time:{type: String},
     status:{type: String}
 

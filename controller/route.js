@@ -8,7 +8,6 @@ const AuctionSchema = require('../model/AuctionSchema')
 const CardDetSchema = require('../model/CardDetSchema')
 
 
-
 router.get('/cart/:email',(req,res,next)=>{
     const emailToFind = req.params.email;
     AuctionSchema.find({buyer:emailToFind},(error,data)=>{
@@ -64,6 +63,31 @@ router.get('/user-details/:email',(req,res,next)=>{
     })
 })
 
+router.get('/user-details/:email',(req,res,next)=>{
+  const emailToFind = req.params.email;
+  User.find({email:emailToFind},(error,data)=>{
+      if(error){
+          return next(error);
+      }
+      else{
+          res.json(data);
+      }
+  })
+})
+router.delete('/del/:id', (req, res) => {
+  const userId = req.params.id;
+
+  AuctionSchema.findByIdAndDelete(userId, (error, deletedUser) => {
+    if (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'An error occurred while deleting the user' });
+    } else if (deletedUser) {
+      res.json(deletedUser);
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  });
+});
 router.get('/card',(req,res,next)=>{
 
     schema_card.find((error,data)=>{
@@ -127,7 +151,7 @@ router.post('/signup', async (req, res) => {
         if (user) {
         res.status(201).json("exist");
         } else {
-        const newUser = new schema_users({ name, email, password, mobNo });
+        const newUser = new User({ name, email, password, mobNo });
         await newUser.save();
         res.status(201).json("not exist");
         }
